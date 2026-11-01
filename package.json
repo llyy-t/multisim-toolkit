@@ -1,7 +1,7 @@
 {
   "name": "dsh-multisim-toolkit",
   "version": "0.1.0",
-  "description": "Drive the local NI Multisim 14.3 install from DSH: COM automation for schematic/simulation work plus a Win32 GUI channel for netlist drops, screenshots and waveform plots.",
+  "description": "Drive the local NI Multisim 14.3 install from DSH: open and save .ms14 designs, read and edit component values and circuit parameters, run DC/AC/transient/SPICE analyses, export schematics, BOM and netlists, and capture the real schematic window and the real waveform plot.",
   "type": "module",
   "main": "index.js",
   "exports": {

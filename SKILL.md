@@ -1,6 +1,6 @@
 ---
 name: multisim-toolkit
-description: 通过 DSH 插件驱动本机 NI Multisim 14.3：建/开/存电路、改元件值与参数、跑 DC/AC/瞬态/SPICE 分析、导出原理图与报告、截可见窗口、离线读 .ms14。当任务涉及 Multisim、电路仿真、原理图截图、真值表/伯德图/波形数据，或要在本机跑 SPICE 而手边没有 LTspice/ngspice 时使用。
+description: 通过 DSH 插件驱动本机 NI Multisim 14.3：开关 `.ms14` 设计、读写元件值与电路参数、跑 DC/AC/瞬态/SPICE 分析、导出原理图与 BOM/网表、截取实机电路图与实机波形图、离线解析 `.ms14`。当任务涉及 Multisim、电路仿真、原理图截图、实机波形截图、真值表/伯德图/波形数据，或要在本机跑 SPICE 而手边没有 LTspice/ngspice 时使用。
 ---
 
 # Multisim 14.3 操控（msim_* 工具）

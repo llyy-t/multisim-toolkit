@@ -1,11 +1,11 @@
 # multisim-toolkit
 
-一个把 **NI Multisim 14.3** 变成可编程对象的 DSH skill。
+一个把 **NI Multisim 14.3** 变成可编程对象的 DSH 插件 + skill。
 
-它由两部分组成：
+它同时是两样东西，装在同一个仓库里：
 
-1. **`vendor/dsh-multisim-toolkit/`** —— 一个 DSH 插件（Host 侧 Cordis bundle），注册 9 个 `msim_*` 工具；
-2. **本仓库的 `SKILL.md` + `references/`** —— 教模型怎么正确使用这些工具，以及所有踩过的坑。
+1. **一个 DSH 插件**（Host 侧 Cordis bundle）—— 仓库根目录的 `package.json` / `cordis.patch.yml` / `index.js` / `lib/` / `worker/`，注册 9 个 `msim_*` 工具；
+2. **一份 skill** —— `SKILL.md` + `references/`，教模型怎么正确使用这些工具，以及所有踩过的坑。
 
 ```
 DSH Host (node)
@@ -30,7 +30,7 @@ DSH Host (node)
 | `msim_edit` | 改 RLC 值、电路参数、活动变体，替换库器件 |
 | `msim_analyze` | 瞬态 / DC / AC 扫频 / 单频 AC / 命令文件，以及启停仿真 |
 | `msim_export` | 原理图图片、网表、BOM、设计片段 |
-| `msim_gui` | 驱动可见窗口：启动、截图、拖入网表、关对话框、另存为、发送按键 |
+| `msim_gui` | 驱动可见窗口：启动、截图（四档裁剪）、拖入网表、清数据库告警、另存为、发按键、**跑分析**、**抓波形窗** |
 | `msim_spice` | 把网表直接喂给 Multisim 的 SPICE 引擎，返回表格 + CSV + 图 |
 | `msim_design` | 不启动 Multisim，离线读取 `.ms14` 里的元件、值、仪器设置 |
 
@@ -44,16 +44,20 @@ DSH Host (node)
 - 一个 **32 位** Python 3.11–3.13 并装了 pywin32（Multisim 的 Automation API 是 32 位 COM 服务器，64 位解释器 `Connect()` 会 `E_ACCESSDENIED`）；
 - DSH（本插件是 Host-only bundle，不需要浏览器端代码）。
 
-```powershell
-# 1) 体检
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Action check
+**方式一：直接从 GitHub 装**
 
-# 2) 在 DSH 会话里装插件（install.ps1 会把这条指令原样打出来）
-#    plugin_manager({ action: 'install_bundle', target: '<仓库绝对路径>\vendor\dsh-multisim-toolkit' })
-
-# 3) 验证
-#    msim_status({ connect: true })
+```sh
+dsh plugin --profile <你的 profile> add github:llyy-t/multisim-toolkit
 ```
+
+**方式二：从本地 clone 装**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Action check    # 体检
+# 然后把 install.ps1 -Action install 打印出来的那行 plugin_manager(...) 贴进 DSH 会话
+```
+
+**验证**：`msim_status({ connect: true })` —— 期望 `worker.pythonBits: 32`、`com.version: Multisim 14.3`。
 
 也可以不经过 DSH，直接跑离线自检：
 
@@ -75,12 +79,13 @@ python scripts\selfcheck.py --design "C:\path\to\some.ms14"
 
 | 文件 | 内容 |
 | --- | --- |
-| [`SKILL.md`](SKILL.md) | 面向模型：先选通道，再动手；五条最贵的判断；参数速查 |
+| [`SKILL.md`](SKILL.md) | 面向模型：先选通道，再动手；最贵的几条判断；参数速查 |
 | [`references/com-automation.md`](references/com-automation.md) | COM 面完整参考：每个方法、枚举值、8 类失败的症状与规避、类型库注册信息 |
 | [`references/spice-channel.md`](references/spice-channel.md) | SPICE 通道：语法、用 B 源写数字门、子电路、4 个致命坑、9 种分析命令 |
-| [`references/gui-and-files.md`](references/gui-and-files.md) | 可见窗口（含 Save As 三个真实根因）与 `.ms14` 容器格式、元件值三种形态 |
-| [`vendor/dsh-multisim-toolkit/README.md`](vendor/dsh-multisim-toolkit/README.md) | 插件本体说明与 24 条实测边界 |
-| [`vendor/dsh-multisim-toolkit/worker/PROTOCOL.md`](vendor/dsh-multisim-toolkit/worker/PROTOCOL.md) | 插件内部模块契约（要改代码时读） |
+| [`references/gui-and-files.md`](references/gui-and-files.md) | 可见窗口（含 Save As 三个真实根因、分析对话框操作链）与 `.ms14` 容器格式、元件值三种形态 |
+| [`PLUGIN.md`](PLUGIN.md) | 插件本体说明与全部实测边界（安装/自测/协议入口） |
+| [`worker/PROTOCOL.md`](worker/PROTOCOL.md) | 插件内部模块契约（要改代码时读） |
+| [`docs/README.md`](docs/README.md) | 四档截图对比 + 实机电路图/波形图样例的生成命令 |
 
 ## 这个仓库为什么值得看
 
@@ -93,6 +98,8 @@ python scripts\selfcheck.py --design "C:\path\to\some.ms14"
 - **`.ms14` 是 36 字节魔数 + `u64` 长度 + 若干段 PKWare DCL "implode" 数据**，zlib/bz2/lzma/cabinet.dll 全都解不开；用 Mark Adler 的 `blast.c` 编译出的薄壳解压，毫秒级。
 - **`.ms14` 里元件值的"真正来源"是 `CiaParamList.parameters`**，另一条 `<doubles>` 数组是可能已过期的遗留初值（实测某电阻 `doubles` 还是 1000，`parameters` 已经是 `2.2k`）；`&UNI..._uc<hex>` 的 `_uc` 后缀是进程内指针号，不可逆。
 - **截图 `crop=content` 的墨迹判据必须是"暗 或 有彩度"**——只按"暗"判断会漏掉全部蓝色导线（Multisim 的连线是纯蓝 `(0,0,255)`）。
+- **Multisim 的仿真菜单是 BCG 自绘的**，`GetMenu()` 返回 0、投递 `WM_COMMAND` 会把进程打崩；但 `alt+s` 之后按 3 次 `VK_DOWN` 再回车能稳定打开「Analyses and Simulation」，进去之后里面的控件全是标准 Win32 控件，可以按消息操作。
+- **仿真结果画在一个独立的 `图示仪视图` 窗口里**，跟电路图不是同一个窗口——要「实机电路截图 + 实机波形截图」就得分别截两次。
 
 ## 能力边界
 
@@ -100,8 +107,6 @@ python scripts\selfcheck.py --design "C:\path\to\some.ms14"
 
 1. 写网表，拖进可见窗口，Multisim 会自动还原成带真实库器件和连线的**可编辑原理图**；
 2. 直接生成/修改 `.ms14`（容器格式已破解，但写回收尚未实现）。
-
-其它边界见 `vendor/dsh-multisim-toolkit/README.md` 的「已知边界」一节（24 条，都是实测结论）。
 
 ## 许可
 

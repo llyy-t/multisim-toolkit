@@ -11,7 +11,9 @@
         pywin32, Multisim install path, decoder binary);
       * print the precise plugin_manager call to paste into a DSH session.
 
-    The plugin itself lives in vendor\dsh-multisim-toolkit\. Never edit the
+    The plugin itself IS this repository: package.json, cordis.patch.yml,
+    index.js, lib\ and worker\ live at the root, so `dsh plugin add
+    github:llyy-t/multisim-toolkit` installs it directly. Never edit the
     profile's package.json or cordis.patch.yml by hand.
 
     NOTE (maintainers): keep this file ASCII-only. Windows PowerShell 5.1 reads
@@ -43,7 +45,13 @@ $ErrorActionPreference = 'Stop'
 
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repo = Split-Path -Parent $here
-$bundle = Join-Path $repo 'vendor\dsh-multisim-toolkit'
+# The plugin is the repository root. Older checkouts kept it under
+# vendor\dsh-multisim-toolkit\, which is still honoured as a fallback.
+$bundle = $repo
+if (-not (Test-Path (Join-Path $repo 'index.js'))) {
+    $nested = Join-Path $repo 'vendor\dsh-multisim-toolkit'
+    if (Test-Path (Join-Path $nested 'index.js')) { $bundle = $nested }
+}
 $multisimExe = 'C:\Program Files (x86)\National Instruments\Circuit Design Suite 14.3\multisim.exe'
 
 function Write-Head([string] $text) {

@@ -1,0 +1,52 @@
+{
+  "name": "dsh-multisim-toolkit",
+  "version": "0.1.0",
+  "description": "Drive the local NI Multisim 14.3 install from DSH: COM automation for schematic/simulation work plus a Win32 GUI channel for netlist drops, screenshots and waveform plots.",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "icon": "icon.svg",
+  "files": [
+    "index.js",
+    "lib",
+    "worker",
+    "locale",
+    "icon.svg",
+    "cordis.patch.yml",
+    "PLUGIN.md"
+  ],
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/llyy-t/multisim-toolkit.git"
+  },
+  "homepage": "https://github.com/llyy-t/multisim-toolkit#readme",
+  "bugs": {
+    "url": "https://github.com/llyy-t/multisim-toolkit/issues"
+  },
+  "author": "llyy-t",
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "multisim",
+    "ni-multisim",
+    "spice",
+    "eda",
+    "electronics",
+    "simulation"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

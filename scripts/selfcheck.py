@@ -1,4 +1,4 @@
-"""Smoke-test the vendored toolkit's Python layer without DSH.
+"""Smoke-test the toolkit's Python layer without DSH.
 
 Usage (must be a 32-bit Python 3.11+ with pywin32):
 
@@ -9,6 +9,10 @@ Usage (must be a 32-bit Python 3.11+ with pywin32):
 Why this exists: when a tool call fails inside DSH, it is not obvious whether
 the fault is the worker, COM, the GUI window or the design itself. This script
 walks the same layers in order and stops at the first broken one.
+
+The worker directory is the repository's own ``worker/`` (the package root is
+the plugin), with a fallback to an older ``vendor/dsh-multisim-toolkit/worker``
+layout so a checkout that still has the nested form keeps working.
 """
 
 from __future__ import annotations
@@ -20,12 +24,21 @@ import struct
 import sys
 import traceback
 
-WORKER_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "vendor",
-    "dsh-multisim-toolkit",
-    "worker",
-)
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _find_worker_dir():
+    candidates = [
+        os.path.join(ROOT, "worker"),
+        os.path.join(ROOT, "vendor", "dsh-multisim-toolkit", "worker"),
+    ]
+    for candidate in candidates:
+        if os.path.isdir(candidate):
+            return candidate
+    return candidates[0]
+
+
+WORKER_DIR = _find_worker_dir()
 
 PASS = "  ok   "
 FAIL = "  FAIL "

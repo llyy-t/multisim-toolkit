@@ -1,3 +1,9 @@
+<!--
+  插件本体说明。本文件与 package.json / cordis.patch.yml / index.js / lib/ / worker/
+  同属仓库根目录，所以 `dsh plugin add github:llyy-t/multisim-toolkit` 直接可装。
+  面向模型的用法在 SKILL.md，安装与总览在 README.md。
+-->
+
 # dsh-multisim-toolkit
 
 让 DeepSeek Harness 直接操控本机安装的 **Multisim 14.3**：建电路、改元件值、跑仿真分析、导出原理图与网表、抓可见窗口截图。

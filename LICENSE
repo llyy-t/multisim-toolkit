@@ -23,15 +23,15 @@ SOFTWARE.
 ---------------------------------------------------------------------------
 Third-party notices
 
-vendor/dsh-multisim-toolkit/worker/bin/blast.c
-vendor/dsh-multisim-toolkit/worker/bin/blast.h
+worker/bin/blast.c
+worker/bin/blast.h
     PKWare DCL ("implode") decompressor.
     Copyright (C) 2003-2015 Mark Adler.
     Part of zlib <https://github.com/madler/zlib>, zlib license.
     Used as a library compiled into blast_harness.exe; the source is shipped
     unchanged so the binary can be rebuilt from this repository.
 
-vendor/dsh-multisim-toolkit/worker/bin/blast_harness.c
+worker/bin/blast_harness.c
     Thin command-line wrapper written for this project (MIT, as above).
 
 Multisim, NI Circuit Design Suite and National Instruments are trademarks of

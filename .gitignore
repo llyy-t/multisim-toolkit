@@ -27,3 +27,7 @@ probe/img/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# worker scratch directory for .ms14 decoding
+_ms14_tmp/
+

@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 dsh-multisim-toolkit contributors
+Copyright (c) 2026 llyy-t
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,23 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----------------------------------------------------------------------------
-Third-party notices
-
-worker/bin/blast.c
-worker/bin/blast.h
-    PKWare DCL ("implode") decompressor.
-    Copyright (C) 2003-2015 Mark Adler.
-    Part of zlib <https://github.com/madler/zlib>, zlib license.
-    Used as a library compiled into blast_harness.exe; the source is shipped
-    unchanged so the binary can be rebuilt from this repository.
-
-worker/bin/blast_harness.c
-    Thin command-line wrapper written for this project (MIT, as above).
-
-Multisim, NI Circuit Design Suite and National Instruments are trademarks of
-National Instruments Corporation. This project is not affiliated with, or
-endorsed by, National Instruments. It drives a Multisim installation you
-already own, through the documented Automation API and the Windows message
-API; it does not contain or redistribute any National Instruments software.

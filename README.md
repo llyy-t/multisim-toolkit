@@ -110,6 +110,6 @@ python scripts\selfcheck.py --design "C:\path\to\some.ms14"
 
 ## 许可
 
-MIT。第三方组件的许可见 [`LICENSE`](LICENSE)：`worker/bin/blast.c` / `blast.h` 来自 zlib（zlib license，Mark Adler）。
+MIT，见 [`LICENSE`](LICENSE)。第三方组件的许可见 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)：`worker/bin/blast.c` / `blast.h` 来自 zlib（zlib license，Mark Adler）。
 
 本项目与 National Instruments 无关，不包含也不分发任何 NI 软件；它只是驱动你本机已装好的 Multisim。

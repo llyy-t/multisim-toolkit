@@ -1,0 +1,8 @@
+# 统一换行符，避免 Windows/Linux 之间来回改成 CRLF 产生噪音 diff
+* text=auto eol=lf
+
+# 二进制资产原样保存
+*.png binary
+*.exe binary
+*.jpg binary
+*.gif binary

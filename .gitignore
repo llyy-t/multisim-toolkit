@@ -1,0 +1,29 @@
+# --- Python -----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# --- Node -------------------------------------------------------------------
+node_modules/
+npm-debug.log*
+
+# --- toolkit scratch --------------------------------------------------------
+# msim_ms14 falls back to these when MSIM_MS14_WORKDIR is unset
+vendor/dsh-multisim-toolkit/_ms14_tmp/
+*.ms14.out.xml
+
+# --- local Multisim artefacts ----------------------------------------------
+*.ms14.bak
+*_out/
+probe/_out/
+probe/img/
+
+# --- editors / OS -----------------------------------------------------------
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store

@@ -1,0 +1,6 @@
+# Multisim toolkit: registers the msim_* host tools plus a prompt section.
+# The plugin lives entirely in the Host process; it spawns a 32-bit Python
+# worker on demand (Multisim's Automation server is 32-bit COM).
+- insert:
+    - id: multisim-toolkit
+      name: 'dsh-multisim-toolkit'

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Multisim toolkit">
+  <title>Multisim toolkit</title>
+  <rect x="1" y="1" width="62" height="62" rx="13" fill="#12203a"/>
+  <g stroke="#4da3ff" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 22h10"/>
+    <path d="M18 22l5-7 6 14 5-7h6"/>
+    <path d="M40 22h16"/>
+    <circle cx="46" cy="22" r="2.6" fill="#4da3ff" stroke="none"/>
+  </g>
+  <g stroke="#7fe3c0" stroke-width="2.4" fill="none" stroke-linecap="round">
+    <rect x="12" y="38" width="40" height="16" rx="3"/>
+    <path d="M18 50v-6M24 50v-5M30 50v-8M36 50v-4M42 50v-7M48 50v-5"/>
+  </g>
+</svg>

@@ -31,3 +31,7 @@ desktop.ini
 # worker scratch directory for .ms14 decoding
 _ms14_tmp/
 
+
+# local scratch
+COMMIT_MSG.txt
+

@@ -5,6 +5,8 @@ description: 通过 DSH 插件驱动本机 NI Multisim 14.3：开关 `.ms14` 设
 
 # Multisim 14.3 操控（msim_* 工具）
 
+> **非官方工具。** 本 skill 与 National Instruments / Emerson 无关，未获其授权、背书或赞助。它不包含、不分发任何 NI 软件，不绕过授权校验，只驱动你自己合法安装并授权的 Multisim 14.3。许可与免责的完整说明见仓库根目录的 [`README.md`](README.md) 与 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)。
+
 插件 `dsh-multisim-toolkit` 装好后，DSH 里会多出 9 个 `msim_*` 工具。它们把「本机那只 Multisim」变成可编程对象，但**不是所有能力都走同一条路**——选错通道是这个插件最常见的失败原因。
 
 ## 先确认东西在不在

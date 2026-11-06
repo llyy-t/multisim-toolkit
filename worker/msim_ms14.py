@@ -23,6 +23,7 @@ import re
 import shutil
 import struct
 import subprocess
+import sys
 import tempfile
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Optional
@@ -34,6 +35,10 @@ DESIGN_SUFFIXES = (".ms14", ".msm", ".ewb", ".ms11", ".ms12", ".ms13")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DECODER = os.path.join(HERE, "bin", "blast_harness.exe")
+
+# Byte-order mark, stripped if a .ms14 ever starts with one (some editors save
+# XML that way).  The real container does not carry one, so this is defensive.
+_BOM = b"\xef\xbb\xbf"
 
 
 class Ms14Error(Exception):
@@ -65,31 +70,97 @@ def _decoder() -> str:
     )
 
 
+def _decoder_can_write(directory: str) -> bool:
+    """让 blast_harness.exe 亲自往这个目录写一次。
+
+    这是唯一可信的判据。父进程能不能写不算数，别的子进程能不能写也不算数：
+    在这个桌面上，用 Python 解释器起的子进程能写 `%TEMP%`，但 blast_harness
+    这个独立的 exe 写同一个目录会被 CreateFile 拒绝（error 5）。两者的权限
+    边界不同，所以只能用真正要干活的程序去试。
+
+    内容故意写垃圾字节，`blast()` 必然失败 —— 我们只关心输出文件建不建得
+    出来，所以看文件存在与否，不看返回码。
+    """
+    if not directory:
+        return False
+    if not os.path.isfile(DECODER):
+        return False
+    probe_in = os.path.join(directory, ".decoder_probe.in")
+    probe_out = os.path.join(directory, ".decoder_probe.out")
+    try:
+        with open(probe_in, "wb") as handle:
+            handle.write(b"\x00\x01\x02\x03")
+        try:
+            os.remove(probe_out)
+        except OSError:
+            pass
+        try:
+            subprocess.run(
+                [DECODER, probe_in, probe_out],
+                capture_output=True,
+                timeout=30,
+            )
+        except Exception:
+            return False
+        return os.path.isfile(probe_out)
+    except OSError:
+        return False
+    finally:
+        for path in (probe_in, probe_out):
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+
+
+_WORK_ROOT_CACHE: Optional[str] = None
+
+
 def _work_root() -> str:
     """挑一个 blast_harness.exe 真能写进去的目录。
 
-    这台机器上由 32 位 Python 拉起的子进程对 `%TEMP%` 写文件会被拒绝
-    (CreateFileW 报 error 5)，而同一进程自己写 `%TEMP%` 是好的，所以临时
-    目录优先放在模块旁边（bundle 目录），失败再退回系统临时目录。
+    顺序是按"装在哪里"排的。插件形态下模块在 `node_modules` 里，那里不该被
+    写；skill 形态下用户可能把仓库放在任何位置；而受限环境（企业安全软件、
+    受限令牌、桌面沙箱）里，只有某些位置对独立 exe 可写。所以每个候选都必须
+    由 `_decoder_can_write()` 用解压器本身验证过。
+
+    结果缓存：一个进程只探测一次，之后所有解码复用同一个目录。
     """
-    candidates = [
-        os.environ.get("MSIM_MS14_WORKDIR") or "",
-        os.path.join(os.path.dirname(HERE), "_ms14_tmp"),
-        tempfile.gettempdir(),
-    ]
+    global _WORK_ROOT_CACHE
+    if _WORK_ROOT_CACHE:
+        return _WORK_ROOT_CACHE
+
+    candidates: List[str] = []
+
+    override = os.environ.get("MSIM_MS14_WORKDIR") or ""
+    if override:
+        candidates.append(override)
+
+    local = os.environ.get("LOCALAPPDATA") or ""
+    if local:
+        candidates.append(os.path.join(local, "msim-ms14-tmp"))
+
+    candidates.append(os.path.join(os.path.dirname(HERE), "_ms14_tmp"))
+    candidates.append(tempfile.gettempdir())
+
     for candidate in candidates:
-        if not candidate:
-            continue
         try:
             os.makedirs(candidate, exist_ok=True)
-            probe = os.path.join(candidate, ".write_probe")
-            with open(probe, "wb") as handle:
-                handle.write(b"ok")
-            os.remove(probe)
-            return candidate
         except OSError:
             continue
-    return tempfile.gettempdir()
+        if _decoder_can_write(candidate):
+            _WORK_ROOT_CACHE = candidate
+            return candidate
+
+    # 没有一个候选可用。返回第一个建得出来的目录，让 _explode 抛出带
+    # error 5 的原始信息 —— 那里会提示用户设 MSIM_MS14_WORKDIR。不在这里
+    # 抛，是因为调用方可能只是想知道路径，不该因为探测失败就整体失败。
+    for candidate in candidates:
+        if os.path.isdir(candidate):
+            _WORK_ROOT_CACHE = candidate
+            return candidate
+    _WORK_ROOT_CACHE = tempfile.gettempdir()
+    return _WORK_ROOT_CACHE
 
 
 def _explode(payload: bytes, work: str, index: int) -> bytes:
@@ -121,12 +192,14 @@ def _explode(payload: bytes, work: str, index: int) -> bytes:
 
 
 def decode(path: str) -> Dict[str, Any]:
-    """解开一个 .ms14，返回 {path, xml, blocks, compressed_bytes, declared_length}。"""
+    """解开一个 .ms14，返回 {path, xml, blocks, compressed_bytes, declared_length, workdir}。"""
     target = os.path.abspath(os.path.expanduser(str(path)))
     if not os.path.isfile(target):
         raise Ms14Error("PATH_MISSING", "file not found: %s" % target)
     with open(target, "rb") as handle:
         blob = handle.read()
+    if blob.startswith(_BOM):
+        blob = blob[len(_BOM) :]
     if blob[: len(MAGIC)] != MAGIC:
         raise Ms14Error(
             "BAD_ARGS",
@@ -142,7 +215,8 @@ def decode(path: str) -> Dict[str, Any]:
             "the file may be truncated or not a .ms14",
         )
 
-    work = tempfile.mkdtemp(prefix="msim_ms14_", dir=_work_root())
+    work_root = _work_root()
+    work = tempfile.mkdtemp(prefix="msim_ms14_", dir=work_root)
     try:
         chunks: List[bytes] = []
         position = HEADER_LEN
@@ -197,6 +271,7 @@ def decode(path: str) -> Dict[str, Any]:
         "declared_length": declared,
         "decoded_bytes": len(xml),
         "blocks": index,
+        "workdir": work_root,
         "xml": xml,
     }
 

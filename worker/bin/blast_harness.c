@@ -12,7 +12,18 @@
  * process is started by the 32-bit Python guest interpreter, a plain
  * fopen(path, "wb") fails with EACCES for every path outside the DSH
  * workspace, while the very same fopen succeeds inside the interpreter.  The
- * CreateFileW calls below do not have that problem.
+ * CreateFile calls below do not have that problem.
+ *
+ * Two details matter for portability, because this gets run as a plain
+ * command-line tool (skills, CI, shells) rather than only from Python:
+ *
+ *   1. Paths are tried as UTF-8 first and as ANSI (CP_ACP) second.  The caller
+ *      writes UTF-8, so a Chinese path such as 设计3.ms14 must be decoded as
+ *      UTF-8 rather than through the process ANSI code page.
+ *   2. If CREATE_ALWAYS fails with a sharing violation, the existing file is
+ *      removed and the create retried once.  A stale read-only or mapped
+ *      output is otherwise indistinguishable from a permissions problem in the
+ *      message the user sees.
  */
 
 #include <stdio.h>
@@ -45,14 +56,67 @@ static int out_fun(void *how, unsigned char *buf, unsigned len) {
     return 0;
 }
 
+/* Open a path for reading, trying UTF-8 then the ANSI code page. */
+static HANDLE open_read(const char *path) {
+    wchar_t wide[32768];
+    HANDLE handle;
+
+    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, wide,
+                            (int)(sizeof(wide) / sizeof(wide[0]))) > 0) {
+        handle = CreateFileW(wide, GENERIC_READ,
+                             FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                             OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (handle != INVALID_HANDLE_VALUE)
+            return handle;
+    }
+    return CreateFileA(path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                       NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+}
+
+/* Create a path for writing, trying UTF-8 then the ANSI code page, and
+ * clearing a stale file once if the first attempt is blocked by it. */
+static HANDLE create_write(const char *path) {
+    wchar_t wide[32768];
+    DWORD attempt;
+    int wide_ok;
+
+    wide_ok = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, wide,
+                                  (int)(sizeof(wide) / sizeof(wide[0]))) > 0;
+
+    for (attempt = 0; attempt < 2; attempt++) {
+        HANDLE handle;
+
+        if (wide_ok)
+            handle = CreateFileW(wide, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
+                                 FILE_ATTRIBUTE_NORMAL, NULL);
+        else
+            handle = CreateFileA(path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
+                                 FILE_ATTRIBUTE_NORMAL, NULL);
+        if (handle != INVALID_HANDLE_VALUE)
+            return handle;
+
+        /* A leftover file may be read-only or still mapped.  Clear it once. */
+        if (attempt == 0) {
+            if (wide_ok)
+                SetFileAttributesW(wide, FILE_ATTRIBUTE_NORMAL);
+            else
+                SetFileAttributesA(path, FILE_ATTRIBUTE_NORMAL);
+            if (wide_ok)
+                DeleteFileW(wide);
+            else
+                DeleteFileA(path);
+        }
+    }
+    return INVALID_HANDLE_VALUE;
+}
+
 static unsigned char *read_all(const char *path, DWORD *out_len) {
     HANDLE file;
     LARGE_INTEGER size;
     DWORD got = 0;
     unsigned char *buffer;
 
-    file = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
-                       NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    file = open_read(path);
     if (file == INVALID_HANDLE_VALUE) {
         fprintf(stderr, "cannot open input %s (error %lu)\n", path,
                 (unsigned long)GetLastError());
@@ -101,8 +165,7 @@ int main(int argc, char **argv) {
     if (inbuf == NULL)
         return 2;
 
-    g_out = CreateFileA(argv[2], GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
-                        FILE_ATTRIBUTE_NORMAL, NULL);
+    g_out = create_write(argv[2]);
     if (g_out == INVALID_HANDLE_VALUE) {
         fprintf(stderr, "cannot open output %s (error %lu)\n", argv[2],
                 (unsigned long)GetLastError());

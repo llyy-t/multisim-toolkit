@@ -108,8 +108,46 @@ python scripts\selfcheck.py --design "C:\path\to\some.ms14"
 1. 写网表，拖进可见窗口，Multisim 会自动还原成带真实库器件和连线的**可编辑原理图**；
 2. 直接生成/修改 `.ms14`（容器格式已破解，但写回收尚未实现）。
 
-## 许可
+## 许可与免责声明
 
-MIT，见 [`LICENSE`](LICENSE)。第三方组件的许可见 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)：`worker/bin/blast.c` / `blast.h` 来自 zlib（zlib license，Mark Adler）。
+**本仓库的代码**（`index.js`、`lib/`、`worker/`、`scripts/`、文档）以 **MIT** 发布，见 [`LICENSE`](LICENSE)。你可以自由使用、修改、商用、再分发，保留版权声明即可。
 
-本项目与 National Instruments 无关，不包含也不分发任何 NI 软件；它只是驱动你本机已装好的 Multisim。
+**第三方组件**见 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)：`worker/bin/blast.c` / `blast.h` 是 Mark Adler 的 PKWare DCL 解压器，zlib license（保留源码，方便你自行重编译 `blast_harness.exe`）。
+
+### 与 National Instruments 的关系
+
+本项目是**独立、非官方**的第三方工具，与 National Instruments / Emerson 没有任何隶属、授权、背书或赞助关系。它：
+
+- **不包含、不分发** NI 的任何软件、二进制、模型库或数据库文件；
+- **不绕过** Multisim 的任何授权、激活或序列号校验；
+- 只是驱动**你自己电脑上已经合法安装并授权好的** Multisim 14.3；
+- 使用 Multisim 需要你有合法的 Multisim 授权，这一点与本项目无关。
+
+`Multisim`、`National Instruments`、`NI Circuit Design Suite` 是其各自所有者的商标，此处仅用于**指明本工具所兼容的产品**（nominative use），不主张任何商标权。
+
+### 文件格式兼容性
+
+`worker/msim_ms14.py` 能读取 `.ms14` 容器，做法是**逆向工程该容器现有的压缩封装**，目的是让工具能在不启动 Multisim 的情况下查看设计内容（元件清单、参数值、仪器设置）。
+
+需要说明的是：
+
+- 该格式的压缩层**没有加密、没有访问控制、没有技术保护措施**；本项目实现的是解压缩，不是破解任何保护机制，也不涉及授权绕过；
+- 使用的是公开发表的 PKWare DCL "implode" 算法（Mark Adler `blast.c`），不是 NI 的私有算法；
+- 部分元件值在文件里以进程内指针号（`_uc<hex>`）形式存在，**无法还原**——这也侧面说明该格式从未被设计成可移植的公开接口；
+- 这个读取能力属于**互操作性用途**。如果你所在司法辖区或你的 Multisim 许可协议对此有额外限制，请自行判断是否使用；不使用时其余 8 个工具完全不受影响。
+
+### 本机数据目录
+
+工具运行时会访问你机器上已有的 NI 目录，但**只做必要的读写**：
+
+| 路径 | 用途 | 权限 |
+| --- | --- | --- |
+| `C:\Program Files (x86)\National Instruments\Circuit Design Suite 14.3\` | 启动 `multisim.exe` | 只读 |
+| `C:\ProgramData\National Instruments\Circuit Design Suite 14.3\database\` | 主数据库（Multisim 自己读写） | 本工具不直接写 |
+| `%USERPROFILE%\Documents\National Instruments\Circuit Design Suite 14.3\` | 你保存的设计文件 | **会被读写**，见下 |
+
+⚠️ **关于设计文件**：`msim_circuit({ action: 'save_as' })` 会覆盖你指定路径上的同名文件，Multisim 不会询问。**不要让另存为的目标指向你唯一的一份设计**。同理，GUI 通道的 `msim_gui({ action: 'save_as' })` 只在文档尚未命名时可靠，文档已命名时它会直接报错而不是原地保存（这是刻意的防护，详见 [`PLUGIN.md`](PLUGIN.md)）。
+
+中途产生的解码临时文件写在 `MSIM_MS14_WORKDIR`（若设置）、`%LOCALAPPDATA%\msim-ms14-tmp`、或仓库旁的 `_ms14_tmp` 之一，取第一个真正可写的；用完即删。
+
+MIT，见 [`LICENSE`](LICENSE)。

@@ -45,9 +45,49 @@ this repository.
 ## Not affiliated with National Instruments
 
 Multisim, NI Circuit Design Suite and National Instruments are trademarks of
-National Instruments Corporation.
+National Instruments Corporation (now part of Emerson Electric). They are used
+here only to identify the product this tool interoperates with (nominative
+use); no trademark right is claimed.
 
 This project is not affiliated with, or endorsed by, National Instruments. It
 drives a Multisim installation you already own, through the documented
 Automation API and the Windows message API. It does not contain or
-redistribute any National Instruments software.
+redistribute any National Instruments software, model library, database file or
+license material, and it does not bypass any licensing, activation or
+serial-number check. Using it requires your own valid Multisim licence.
+
+## File format compatibility (worker/msim_ms14.py)
+
+`worker/msim_ms14.py` reads the `.ms14` container so a design can be inspected
+without starting Multisim.
+
+The compression envelope it reverses is unencrypted and has no access control:
+there is no technical protection measure being circumvented, and no licensing
+check is involved. The decompression algorithm itself is PKWare DCL
+("implode"), published and implemented independently by Mark Adler in
+`blast.c` (above) — it is not a National Instruments algorithm.
+
+Some component values are stored in the file as process-local pointer numbers
+(`_uc<hex>`) and cannot be recovered at all, which is consistent with the format
+being an internal serialisation rather than a documented interchange format.
+
+This capability exists for interoperability. If your Multisim licence terms or
+your jurisdiction restrict reverse engineering beyond what is needed for
+interoperability, judge for yourself whether to use it; the other eight tools do
+not depend on it.
+
+## Local data directories
+
+The tools touch the following locations on your machine and nothing else:
+
+- `C:\Program Files (x86)\National Instruments\Circuit Design Suite 14.3\` —
+  read only, to launch `multisim.exe`.
+- `C:\ProgramData\National Instruments\Circuit Design Suite 14.3\database\` —
+  opened by Multisim itself; this project does not write there directly.
+- `%USERPROFILE%\Documents\National Instruments\Circuit Design Suite 14.3\` —
+  designs you save or open. `msim_circuit({ action: 'save_as' })` overwrites an
+  existing file at the target path without prompting, so do not point it at your
+  only copy.
+- `MSIM_MS14_WORKDIR`, else `%LOCALAPPDATA%\msim-ms14-tmp`, else a `_ms14_tmp`
+  directory beside the worker — scratch space for decoding, first writable one
+  wins, cleaned up after use.

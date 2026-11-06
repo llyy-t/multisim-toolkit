@@ -11,15 +11,15 @@ node_modules/
 npm-debug.log*
 
 # --- toolkit scratch --------------------------------------------------------
-# msim_ms14 falls back to these when MSIM_MS14_WORKDIR is unset
-vendor/dsh-multisim-toolkit/_ms14_tmp/
+# worker/msim_ms14.py decodes .ms14 into the first of MSIM_MS14_WORKDIR,
+# %LOCALAPPDATA%\msim-ms14-tmp, <repo>/_ms14_tmp, %TEMP% that the decoder can
+# actually write to. Only the repo-local one needs ignoring.
+_ms14_tmp/
 *.ms14.out.xml
 
 # --- local Multisim artefacts ----------------------------------------------
 *.ms14.bak
 *_out/
-probe/_out/
-probe/img/
 
 # --- editors / OS -----------------------------------------------------------
 .vscode/
@@ -28,10 +28,5 @@ Thumbs.db
 desktop.ini
 .DS_Store
 
-# worker scratch directory for .ms14 decoding
-_ms14_tmp/
-
-
 # local scratch
 COMMIT_MSG.txt
-

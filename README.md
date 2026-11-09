@@ -108,6 +108,19 @@ python scripts\selfcheck.py --design "C:\path\to\some.ms14"
 1. 写网表，拖进可见窗口，Multisim 会自动还原成带真实库器件和连线的**可编辑原理图**；
 2. 直接生成/修改 `.ms14`（容器格式已破解，但写回收尚未实现）。
 
+## 只要文件读写和仿真？用免费版
+
+上面的能力里，有两块**不需要 DSH、不需要开 Multisim 窗口、不绑 Windows 宿主**：
+
+- 离线读 `.ms14`（元件、值、仪器设置、创建版本）
+- 把 SPICE 网表喂给本机 Multisim 跑仿真，拿回数据表 + CSV + 图
+
+这两块我单独拆成了一个可移植的免费 skill：[**llyy-t/multisim-file-tools**](https://github.com/llyy-t/multisim-file-tools)。它是一份 `SKILL.md` 加一个纯命令行工具 `cli.py`，Claude Code / Cursor / 任何吃 Markdown skill 的 agent 都能用，`design` 子命令甚至不要求目标机器装有 Multisim。
+
+本仓库和它的关系：两边共用 `worker/` 下的同一批模块（`msim_ms14.py` / `msim_spice.py` / `msim_deck.py` / `msim_raster.py` / `msim_com.py`），改任意一边都要保证另一边还能跑。免费版里没有 `msim_gui.py`——**所有窗口自动化、截图、波形抓取只在这个仓库里**。
+
+需要驱动 Multisim 的界面、截图、菜单、波形图，用本仓库；只要能读文件和跑仿真，用免费版。
+
 ## 许可与免责声明
 
 **本仓库的代码**（`index.js`、`lib/`、`worker/`、`scripts/`、文档）以 **MIT** 发布，见 [`LICENSE`](LICENSE)。你可以自由使用、修改、商用、再分发，保留版权声明即可。
